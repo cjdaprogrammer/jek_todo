@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Space</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        /* Body Flex Layout */
+        body {
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(45deg, #ff6ec7, #ffc600, #06d6a0, #118ab2, #ef476f);
+            background-size: 300% 300%;
+            animation: gradientShift 10s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Header */
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .header p {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        /* Main Container */
+        .task-container {
+            flex: 1; /* This allows the main content to grow and fill available space */
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Add Task Form */
+        .add-task-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .add-task-form input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .add-task-form button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        .add-task-form button:hover {
+            background-color: #388e3c;
+        }
+
+        /* Task List */
+        .task-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .task-list li.completed {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        /* Buttons */
+        .btn-completed {
+            background-color: #00bcd4;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+        }
+    </style>
+    <script>
+        function markCompleted(taskId) {
+            const taskElement = document.getElementById(`task-${taskId}`);
+            taskElement.classList.add('completed');
+
+            // Delay the form submission to allow the animation to complete
+            setTimeout(() => {
+                document.getElementById(`complete-form-${taskId}`).submit();
+            }, 500);
+        }
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>Personal Task Space</h1>
+        <p>Organize your day, your way!</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="task-container">
+        <!-- Add Task Form -->
+        <form method="post" action="{% url 'add_task' %}" class="add-task-form">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="Add a new task..." required>
+            <button type="submit">Add</button>
+        </form>
+
+        <!-- Task List -->
+        <ul class="task-list">
+            {% for task in tasks %}
+            <li id="task-{{ task.id }}">
+                <!-- Inline Edit -->
+                <form method="post" action="{% url 'edit_task' task.id %}" style="flex: 1;">
+                    {% csrf_token %}
+                    <input 
+                        type="text" 
+                        name="title" 
+                        value="{{ task.title }}" 
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                </form>
+
+                <!-- Completed Button -->
+                <form 
+                    method="post" 
+                    action="{% url 'toggle_completed' task.id %}" 
+                    id="complete-form-{{ task.id }}" 
+                    style="margin-left: 10px;"
+                    onsubmit="event.preventDefault(); markCompleted({{ task.id }});">
+                    {% csrf_token %}
+                    <button type="button" class="btn-completed" onclick="markCompleted({{ task.id }})">✓</button>
+                </form>
+
+                <!-- Delete Button -->
+                <form method="post" action="{% url 'delete_task' task.id %}" style="margin-left: 10px;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-delete">🗑</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; {{ now.year }} Personal Task Space. All rights reserved.</p>
+    </footer>
+</body>
+</html>
